@@ -7,7 +7,7 @@ app.config['SECRET_KEY'] = 'surveysarecool'
 app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 debug = DebugToolbarExtension(app)
 
-responses = []
+res_sessions = 'responses'
 
 @app.route('/')
 def instructions_page():
@@ -17,25 +17,27 @@ def instructions_page():
 
 @app.route('/startpage',methods=['POST'])
 def start_survey():
+    session[res_sessions] = []
     return redirect('/questions/0')
 
 @app.route('/questions/<int:id>')
 def questions_page(id):
-    question = satisfaction_survey.questions[id]
-
+    responses = session.get(res_sessions)
     if (len(responses) != id):
         flash('Error: Trying to access questions out of order')
         return redirect(f'questions/{len(responses)}')
     if (len(responses) == len(satisfaction_survey.questions)):
         flash('Error: survey already completed')
         return redirect('/end-survey')
-
+    question = satisfaction_survey.questions[id]
     return render_template('questions.html', question=question, id=id)
 
 @app.route('/answerpage',methods=['POST'])
 def answers_page():
     ans = request.form['answer']
+    responses = session[res_sessions]
     responses.append(ans)
+    session[res_sessions] = responses
 
     if (len(responses) == len(satisfaction_survey.questions)):
         return redirect('/end-survey')
